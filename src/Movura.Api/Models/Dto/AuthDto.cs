@@ -1,0 +1,1 @@
+// Archivo intencionalmente vacío: DTOs unificados en AuthDtos.cs

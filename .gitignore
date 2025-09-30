@@ -1,0 +1,42 @@
+# Ignorar directorios y archivos generados
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.vs/
+.vscode/
+.idea/
+
+# Ignorar archivos de configuración local
+appsettings.Development.json
+appsettings.Production.json
+
+# Ignorar archivos de dependencias
+packages/
+node_modules/
+
+# Ignorar archivos de publicación
+publish/
+*.publish.xml
+
+# Ignorar archivos temporales
+*.tmp
+*.temp
+*.log
+
+# Ignorar archivos de base de datos
+*.mdf
+*.ldf
+*.db
+
+# Ignorar certificados y secretos
+*.pfx
+*.key
+*.pem
+
+# Ignorar archivos Docker específicos de desarrollo
+docker-compose.override.yml
+
+# Mantener los scripts SQL
+!src/Movura.Api/Data/Scripts/
