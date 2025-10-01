@@ -28,7 +28,7 @@ public class ComercioService : IComercioService
 
     public async Task<List<ComercioDto>> GetByParkingIdAsync(string parkingId)
     {
-        var comercios = await _context.Comercios
+        var comercios = await _context.Set<Comercio>()
             .Where(c => c.ParkingId == parkingId)
             .Include(c => c.Usuarios)
             .ToListAsync();
@@ -45,7 +45,7 @@ public class ComercioService : IComercioService
 
         await ValidateComercioAsync(comercio);
 
-        _context.Comercios.Add(comercio);
+        _context.Set<Comercio>().Add(comercio);
         await _context.SaveChangesAsync();
 
         await NotifyNewComercioAsync(comercio, parking.AdminCorreo);
@@ -55,7 +55,7 @@ public class ComercioService : IComercioService
 
     public async Task<ComercioDto> UpdateAsync(string parkingId, int comercioId, ComercioDto comercioDto)
     {
-        var comercio = await _context.Comercios
+        var comercio = await _context.Set<Comercio>()
             .Include(c => c.Usuarios)
             .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId)
             ?? throw new InvalidOperationException($"No se encontró el comercio con ID {comercioId}");
@@ -84,12 +84,12 @@ public class ComercioService : IComercioService
 
     public async Task DeleteAsync(string parkingId, int comercioId)
     {
-        var comercio = await _context.Comercios
+        var comercio = await _context.Set<Comercio>()
             .Include(c => c.Usuarios)
             .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId)
             ?? throw new InvalidOperationException($"No se encontró el comercio con ID {comercioId}");
 
-        _context.Comercios.Remove(comercio);
+        _context.Set<Comercio>().Remove(comercio);
         await _context.SaveChangesAsync();
 
         await NotifyDeletedComercioAsync(comercio);
@@ -99,7 +99,7 @@ public class ComercioService : IComercioService
     {
         await ValidateParkingAsync(parkingId);
 
-        var currentComercios = await _context.Comercios
+        var currentComercios = await _context.Set<Comercio>()
             .Where(c => c.ParkingId == parkingId)
             .ToListAsync();
 
@@ -107,7 +107,7 @@ public class ComercioService : IComercioService
             .Where(c => !comercios.Any(dto => dto.Id == c.Id))
             .ToList();
 
-        _context.Comercios.RemoveRange(comerciosToDelete);
+        _context.Set<Comercio>().RemoveRange(comerciosToDelete);
 
         var updatedComercios = new List<Comercio>();
         foreach (var comercioDto in comercios)
@@ -117,7 +117,7 @@ public class ComercioService : IComercioService
             {
                 comercio = _mapper.Map<Comercio>(comercioDto);
                 comercio.ParkingId = parkingId;
-                _context.Comercios.Add(comercio);
+                _context.Set<Comercio>().Add(comercio);
             }
             else
             {
@@ -134,7 +134,7 @@ public class ComercioService : IComercioService
 
     public async Task NotifyAccountsAsync(string parkingId, int comercioId, List<string> accounts)
     {
-        var comercio = await _context.Comercios
+        var comercio = await _context.Set<Comercio>()
             .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId)
             ?? throw new InvalidOperationException($"No se encontró el comercio con ID {comercioId}");
 
@@ -150,7 +150,7 @@ public class ComercioService : IComercioService
 
     private async Task<Parking> ValidateParkingAsync(string parkingId)
     {
-        var parking = await _context.Parkings.FindAsync(parkingId);
+        var parking = await _context.Set<Parking>().FindAsync(parkingId);
         if (parking == null)
         {
             throw new InvalidOperationException($"No se encontró el parking con ID {parkingId}");
@@ -173,7 +173,7 @@ public class ComercioService : IComercioService
         var userEmails = comercio.Usuarios.Select(u => u.Email).ToList();
         comercio.Usuarios = comercio.Usuarios.DistinctBy(u => u.Email).ToList();
 
-        var existingEmails = await _context.Comercios
+        var existingEmails = await _context.Set<Comercio>()
             .Where(c => c.ParkingId == comercio.ParkingId && c.Id != comercio.Id)
             .SelectMany(c => c.Usuarios.Select(u => u.Email))
             .ToListAsync();

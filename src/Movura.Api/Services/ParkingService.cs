@@ -1,7 +1,6 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Movura.Api.Data.Context;
-using Movura.Api.Data.Entities;
 using Movura.Api.Models.Dto;
 using Movura.Api.Services.Interfaces;
 
@@ -24,7 +23,7 @@ public class ParkingService : IParkingService
     {
         try
         {
-            var query = _context.Parkings
+            var query = _context.Set<Movura.Api.Data.Entities.Parking>()
                 .Include(p => p.Config)
                 .Include(p => p.Comercios)
                 .AsQueryable();
@@ -48,7 +47,7 @@ public class ParkingService : IParkingService
     {
         try
         {
-            var parking = await _context.Parkings
+            var parking = await _context.Set<Movura.Api.Data.Entities.Parking>()
                 .Include(p => p.Config)
                 .Include(p => p.Comercios)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -66,7 +65,7 @@ public class ParkingService : IParkingService
     {
         try
         {
-            var parking = await _context.Parkings
+            var parking = await _context.Set<Movura.Api.Data.Entities.Parking>()
                 .Include(p => p.Config)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -75,19 +74,16 @@ public class ParkingService : IParkingService
                 throw new InvalidOperationException($"No se encontró el parking con ID {id}");
             }
 
-            // Si no existe configuración, crear una nueva
             if (parking.Config == null)
             {
-                parking.Config = new ParkingConfig
+                parking.Config = new Movura.Api.Data.Entities.ParkingConfig
                 {
                     ParkingId = parking.Id
                 };
             }
 
-            // Actualizar la configuración
             _mapper.Map(configDto, parking.Config);
 
-            // Validar la configuración
             ValidateParkingConfig(parking.Config);
 
             await _context.SaveChangesAsync();
@@ -100,7 +96,7 @@ public class ParkingService : IParkingService
         }
     }
 
-    private void ValidateParkingConfig(ParkingConfig config)
+    private void ValidateParkingConfig(Movura.Api.Data.Entities.ParkingConfig config)
     {
         if (config.TarifaBase < 0)
             throw new InvalidOperationException("La tarifa base no puede ser negativa");
@@ -117,7 +113,6 @@ public class ParkingService : IParkingService
         if (config.GraciaMin < 0)
             throw new InvalidOperationException("El tiempo de gracia no puede ser negativo");
 
-        // Validar formato de hora (HH:mm)
         if (!TimeSpan.TryParse(config.HoraCorte, out _))
             throw new InvalidOperationException("El formato de hora de corte debe ser HH:mm");
     }
