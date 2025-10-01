@@ -1,57 +1,41 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Movura.Api.Data.Entities;
 
-[Table("Transacciones")]
 public class Transaccion
 {
     [Key]
-    [Column("id_transaccion")]
     public int Id { get; set; }
 
-    [Column("id_pago")]
     public int? PagoId { get; set; }
+    public Pago? Pago { get; set; }
 
-    [Column("id_acceso")]
+    public string? ParkingId { get; set; }
+    public Parking? Parking { get; set; }
+    
     public int? AccesoId { get; set; }
+    public Acceso? Acceso { get; set; }
 
-    [Column("id_qr")]
     public int? QRId { get; set; }
+    public CodigoQR? CodigoQR { get; set; }
 
-    [Required]
-    [Column("tipo")]
-    [StringLength(50)]
-    public string Tipo { get; set; } = string.Empty;
-
-    [Required]
-    [Column("fecha_transaccion")]
-    public DateTime FechaTransaccion { get; set; }
-
-    [Required]
-    [Column("monto", TypeName = "decimal(18,2)")]
-    public decimal Monto { get; set; }
-
-    [Required]
-    [Column("id_estatus")]
     public int StatusId { get; set; }
+    public Status? Status { get; set; }
 
-    [Required]
-    [Column("id_usuario")]
-    public int UserId { get; set; }
+    public int? UserId { get; set; }
+    public User? User { get; set; }
+    
+    public int? TicketId { get; set; }
+    public Ticket? Ticket { get; set; }
+    
+    public int? ComercioId { get; set; }
+    public Comercio? Comercio { get; set; }
 
-    [ForeignKey(nameof(PagoId))]
-    public virtual Pago? Pago { get; set; }
-
-    [ForeignKey(nameof(AccesoId))]
-    public virtual Acceso? Acceso { get; set; }
-
-    [ForeignKey(nameof(QRId))]
-    public virtual CodigoQR? CodigoQR { get; set; }
-
-    [ForeignKey(nameof(StatusId))]
-    public virtual Status? Status { get; set; }
-
-    [ForeignKey(nameof(UserId))]
-    public virtual User? User { get; set; }
+    public decimal Amount { get; set; }
+    
+    public decimal DiscountAmount { get; set; }
+    
+    public string PaymentMethod { get; set; } = string.Empty;
+    
+    public DateTime CreatedAt { get; set; }
 }

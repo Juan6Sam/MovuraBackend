@@ -25,12 +25,15 @@ public class MovuraDbContext : DbContext
     public DbSet<Tarjeta> Tarjetas { get; set; }
     public DbSet<Log> Logs { get; set; }
     public DbSet<Notificacion> Notificaciones { get; set; }
+    public DbSet<Parking> Parkings { get; set; }
+    public DbSet<ParkingConfig> ParkingConfigs { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         
-        // Configuración de relaciones
+        // Configuración de relaciones y tipos de datos
         
         // User
         modelBuilder.Entity<User>()
@@ -48,6 +51,10 @@ public class MovuraDbContext : DbContext
             .HasOne(c => c.Status)
             .WithMany(s => s.Comercios)
             .HasForeignKey(c => c.StatusId);
+
+        modelBuilder.Entity<Comercio>()
+            .Property(c => c.Valor)
+            .HasColumnType("decimal(18, 2)");
 
         modelBuilder.Entity<ComercioEmail>()
             .HasOne(ce => ce.Comercio)
@@ -153,6 +160,32 @@ public class MovuraDbContext : DbContext
             .WithMany(u => u.Transacciones)
             .HasForeignKey(t => t.UserId);
 
+        modelBuilder.Entity<Transaccion>()
+            .Property(t => t.Amount)
+            .HasColumnType("decimal(18, 2)");
+
+        modelBuilder.Entity<Transaccion>()
+            .Property(t => t.DiscountAmount)
+            .HasColumnType("decimal(18, 2)");
+
+        // Parking
+        modelBuilder.Entity<Parking>()
+            .HasOne(p => p.Config)
+            .WithOne(pc => pc.Parking)
+            .HasForeignKey<ParkingConfig>(pc => pc.ParkingId);
+
+        modelBuilder.Entity<ParkingConfig>()
+            .Property(pc => pc.CostoFraccion)
+            .HasColumnType("decimal(18, 2)");
+
+        modelBuilder.Entity<ParkingConfig>()
+            .Property(pc => pc.CostoHora)
+            .HasColumnType("decimal(18, 2)");
+
+        modelBuilder.Entity<ParkingConfig>()
+            .Property(pc => pc.TarifaBase)
+            .HasColumnType("decimal(18, 2)");
+            
         // Tarjeta
         modelBuilder.Entity<Tarjeta>()
             .HasOne(t => t.User)
@@ -169,7 +202,13 @@ public class MovuraDbContext : DbContext
             .HasOne(n => n.User)
             .WithMany(u => u.Notificaciones)
             .HasForeignKey(n => n.UserId);
-            
+        
+        // RefreshToken
+        modelBuilder.Entity<RefreshToken>()
+            .HasOne(rt => rt.User)
+            .WithMany(u => u.RefreshTokens)
+            .HasForeignKey(rt => rt.UserId);
+
         // Índices
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
@@ -179,7 +218,7 @@ public class MovuraDbContext : DbContext
             .HasIndex(a => a.HoraEntrada);
 
         modelBuilder.Entity<Transaccion>()
-            .HasIndex(t => t.FechaTransaccion);
+            .HasIndex(t => t.CreatedAt);
 
         modelBuilder.Entity<CodigoQR>()
             .HasIndex(qr => qr.Codigo)

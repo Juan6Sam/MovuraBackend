@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
 namespace Movura.Api.Data.Entities;
 
@@ -62,4 +63,6 @@ public class User
     public virtual ICollection<Tarjeta> Tarjetas { get; set; } = new List<Tarjeta>();
     public virtual ICollection<Log> Logs { get; set; } = new List<Log>();
     public virtual ICollection<Notificacion> Notificaciones { get; set; } = new List<Notificacion>();
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
 }

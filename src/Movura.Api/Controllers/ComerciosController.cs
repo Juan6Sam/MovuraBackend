@@ -42,7 +42,7 @@ public class ComerciosController : ControllerBase
 
     [HttpPut("{comercioId}")]
     [Authorize(Roles = $"{UserRoles.Admin},{UserRoles.ParkingAdmin}")]
-    public async Task<ActionResult<ComercioDto>> Update(string parkingId, string comercioId, ComercioDto comercioDto)
+    public async Task<ActionResult<ComercioDto>> Update(string parkingId, int comercioId, ComercioDto comercioDto)
     {
         _logger.LogInformation("Actualizando comercio {ComercioId} del parking {ParkingId}", comercioId, parkingId);
         var comercio = await _comercioService.UpdateAsync(parkingId, comercioId, comercioDto);
@@ -51,7 +51,7 @@ public class ComerciosController : ControllerBase
 
     [HttpDelete("{comercioId}")]
     [Authorize(Roles = $"{UserRoles.Admin},{UserRoles.ParkingAdmin}")]
-    public async Task<ActionResult> Delete(string parkingId, string comercioId)
+    public async Task<ActionResult> Delete(string parkingId, int comercioId)
     {
         _logger.LogInformation("Eliminando comercio {ComercioId} del parking {ParkingId}", comercioId, parkingId);
         await _comercioService.DeleteAsync(parkingId, comercioId);
@@ -69,7 +69,7 @@ public class ComerciosController : ControllerBase
 
     [HttpPost("{comercioId}/notify")]
     [Authorize(Roles = $"{UserRoles.Admin},{UserRoles.ParkingAdmin}")]
-    public async Task<ActionResult> NotifyAccounts(string parkingId, string comercioId, [FromBody] List<string> accounts)
+    public async Task<ActionResult> NotifyAccounts(string parkingId, int comercioId, [FromBody] List<string> accounts)
     {
         _logger.LogInformation("Enviando notificaciones a usuarios del comercio {ComercioId}", comercioId);
         await _comercioService.NotifyAccountsAsync(parkingId, comercioId, accounts);

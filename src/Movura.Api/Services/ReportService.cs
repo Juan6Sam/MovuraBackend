@@ -1,3 +1,4 @@
+using System.Text;
 using ClosedXML.Excel;
 using Movura.Api.Data.Context;
 using Movura.Api.Models.Dto;
@@ -70,28 +71,28 @@ public class ReportService : IReportService
 
     public async Task<List<TransactionReportDto>> GetTransactionReportAsync(string parkingId, DateTime startDate, DateTime endDate)
     {
-        return await _context.Transactions
+        return await _context.Transacciones
             .Where(t => t.ParkingId == parkingId &&
                        t.CreatedAt >= startDate &&
                        t.CreatedAt <= endDate)
             .OrderBy(t => t.CreatedAt)
             .Select(t => new TransactionReportDto
             {
-                TicketId = t.TicketId,
+                TicketId = t.TicketId.ToString(),
                 EntryTime = t.Ticket!.EntryTime,
                 ExitTime = t.Ticket.ExitTime,
                 Amount = t.Amount,
                 PaymentMethod = t.PaymentMethod,
-                ComercioId = t.ComercioId,
+                ComercioId = t.ComercioId.ToString(),
                 ComercioName = t.Comercio != null ? t.Comercio.Nombre : null,
                 ComercioDiscount = t.DiscountAmount
             })
             .ToListAsync();
     }
 
-    public async Task<Dictionary<string, ComercioReportDto>> GetComercioReportAsync(string parkingId, DateTime startDate, DateTime endDate)
+    public async Task<Dictionary<int, ComercioReportDto>> GetComercioReportAsync(string parkingId, DateTime startDate, DateTime endDate)
     {
-        var transactions = await _context.Transactions
+        var transactions = await _context.Transacciones
             .Where(t => t.ParkingId == parkingId &&
                        t.CreatedAt >= startDate &&
                        t.CreatedAt <= endDate &&
@@ -99,11 +100,11 @@ public class ReportService : IReportService
             .Include(t => t.Comercio)
             .ToListAsync();
 
-        var comercioReports = new Dictionary<string, ComercioReportDto>();
+        var comercioReports = new Dictionary<int, ComercioReportDto>();
 
         foreach (var transaction in transactions.Where(t => t.Comercio != null))
         {
-            var comercioId = transaction.ComercioId!;
+            var comercioId = transaction.ComercioId!.Value;
             if (!comercioReports.ContainsKey(comercioId))
             {
                 comercioReports[comercioId] = new ComercioReportDto
@@ -119,7 +120,7 @@ public class ReportService : IReportService
             report.TotalDiscountAmount += transaction.DiscountAmount;
             report.Transactions.Add(new ComercioTransactionDto
             {
-                TicketId = transaction.TicketId,
+                TicketId = transaction.TicketId.ToString(),
                 TransactionTime = transaction.CreatedAt,
                 DiscountAmount = transaction.DiscountAmount,
                 DiscountType = transaction.Comercio!.Tipo

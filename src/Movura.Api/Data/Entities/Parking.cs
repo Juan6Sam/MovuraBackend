@@ -38,6 +38,9 @@ public class ParkingConfig
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
     [Required]
+    public int TotalSpaces { get; set; }
+    
+    [Required]
     public decimal TarifaBase { get; set; }
     
     [Required]
