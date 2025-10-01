@@ -1,0 +1,44 @@
+openapi: 3.0.1
+info:
+  title: Movura API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponseWrapper'
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string }
+        password: { type: string }
+    LoginResponseUser:
+      type: object
+      properties:
+        username: { type: string }
+        email: { type: string }
+        firstLogin: { type: boolean }
+    LoginResponse:
+      type: object
+      properties:
+        token: { type: string }
+        user: { $ref: '#/components/schemas/LoginResponseUser' }
+    LoginResponseWrapper:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/LoginResponse' }
