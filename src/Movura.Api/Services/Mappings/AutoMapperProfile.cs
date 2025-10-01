@@ -14,7 +14,7 @@ public class AutoMapperProfile : Profile
         CreateMap<ParkingConfig, ParkingConfigDto>();
         CreateMap<Comercio, ComercioDto>();
         CreateMap<Ticket, TicketDto>();
-        CreateMap<Transaction, TransactionDto>();
+        CreateMap<Transaccion, TransactionDto>();
 
         // Mapeos inversos para crear/actualizar
         CreateMap<ParkingConfigDto, ParkingConfig>();

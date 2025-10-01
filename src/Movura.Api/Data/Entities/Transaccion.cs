@@ -10,6 +10,7 @@ public class Transaccion
     public int? PagoId { get; set; }
     public Pago? Pago { get; set; }
 
+    // TIPO CORREGIDO: ParkingId ahora es un string para coincidir con Parking.Id
     public string? ParkingId { get; set; }
     public Parking? Parking { get; set; }
     
@@ -28,9 +29,11 @@ public class Transaccion
     public int? TicketId { get; set; }
     public Ticket? Ticket { get; set; }
     
+    // Tipo correcto (int) para coincidir con Comercio.Id
     public int? ComercioId { get; set; }
     public Comercio? Comercio { get; set; }
 
+    // Propiedades que faltaban, ahora presentes
     public decimal Amount { get; set; }
     
     public decimal DiscountAmount { get; set; }

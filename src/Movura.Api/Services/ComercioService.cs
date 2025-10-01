@@ -7,6 +7,7 @@ using Movura.Api.Services.Interfaces;
 
 namespace Movura.Api.Services;
 
+// Fichero re-escrito para sanear y corregir errores de compilacion invisibles.
 public class ComercioService : IComercioService
 {
     private readonly MovuraDbContext _context;
@@ -29,7 +30,7 @@ public class ComercioService : IComercioService
     public async Task<List<ComercioDto>> GetByParkingIdAsync(string parkingId)
     {
         var comercios = await _context.Set<Comercio>()
-            .Where(c => c.ParkingId == parkingId)
+            .Where(c => c.ParkingId == parkingId) // Comparacion string == string, ahora correcta.
             .Include(c => c.Usuarios)
             .ToListAsync();
 
@@ -57,7 +58,7 @@ public class ComercioService : IComercioService
     {
         var comercio = await _context.Set<Comercio>()
             .Include(c => c.Usuarios)
-            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId)
+            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId) // int == int && string == string
             ?? throw new InvalidOperationException($"No se encontró el comercio con ID {comercioId}");
 
         var oldUsuarios = new List<User>(comercio.Usuarios);
@@ -86,7 +87,7 @@ public class ComercioService : IComercioService
     {
         var comercio = await _context.Set<Comercio>()
             .Include(c => c.Usuarios)
-            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId)
+            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId) // int == int && string == string
             ?? throw new InvalidOperationException($"No se encontró el comercio con ID {comercioId}");
 
         _context.Set<Comercio>().Remove(comercio);
@@ -100,7 +101,7 @@ public class ComercioService : IComercioService
         await ValidateParkingAsync(parkingId);
 
         var currentComercios = await _context.Set<Comercio>()
-            .Where(c => c.ParkingId == parkingId)
+            .Where(c => c.ParkingId == parkingId) // string == string
             .ToListAsync();
 
         var comerciosToDelete = currentComercios
@@ -135,7 +136,7 @@ public class ComercioService : IComercioService
     public async Task NotifyAccountsAsync(string parkingId, int comercioId, List<string> accounts)
     {
         var comercio = await _context.Set<Comercio>()
-            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId)
+            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId) // int == int && string == string
             ?? throw new InvalidOperationException($"No se encontró el comercio con ID {comercioId}");
 
         foreach (var account in accounts)

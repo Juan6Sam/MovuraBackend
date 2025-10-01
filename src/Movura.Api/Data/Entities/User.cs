@@ -63,6 +63,8 @@ public class User
     public virtual ICollection<Tarjeta> Tarjetas { get; set; } = new List<Tarjeta>();
     public virtual ICollection<Log> Logs { get; set; } = new List<Log>();
     public virtual ICollection<Notificacion> Notificaciones { get; set; } = new List<Notificacion>();
+    
+    // Propiedad que causa el error CS1061
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
 }

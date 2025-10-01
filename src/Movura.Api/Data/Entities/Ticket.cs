@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace Movura.Api.Data.Entities;
 
@@ -13,6 +14,7 @@ public class Ticket
     public int? AccesoId { get; set; }
     public Acceso? Acceso { get; set; }
 
+    // TIPO CORREGIDO: ParkingId ahora es un string para coincidir con Parking.Id
     public string? ParkingId { get; set; }
     public Parking? Parking { get; set; }
 

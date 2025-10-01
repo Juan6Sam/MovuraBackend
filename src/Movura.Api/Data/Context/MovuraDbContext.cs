@@ -33,8 +33,30 @@ public class MovuraDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         
-        // Configuración de relaciones y tipos de datos
-        
+        // --- RELACIONES FUNDAMENTALES FALTANTES ---
+
+        modelBuilder.Entity<Comercio>()
+            .HasOne(c => c.Parking)
+            .WithMany(p => p.Comercios)
+            .HasForeignKey(c => c.ParkingId);
+
+        modelBuilder.Entity<Ticket>()
+            .HasOne(t => t.Parking)
+            .WithMany(p => p.Tickets)
+            .HasForeignKey(t => t.ParkingId);
+
+        modelBuilder.Entity<Transaccion>()
+            .HasOne(t => t.Parking)
+            .WithMany(p => p.Transacciones)
+            .HasForeignKey(t => t.ParkingId);
+            
+        modelBuilder.Entity<Transaccion>()
+            .HasOne(t => t.Comercio)
+            .WithMany()
+            .HasForeignKey(t => t.ComercioId);
+
+        // --- CONFIGURACIONES EXISTENTES ---
+
         // User
         modelBuilder.Entity<User>()
             .HasOne(u => u.Role)
