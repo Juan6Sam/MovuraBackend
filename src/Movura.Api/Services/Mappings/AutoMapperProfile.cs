@@ -1,5 +1,5 @@
 using AutoMapper;
-using Movura.Api.Data.Entities;
+using Movura.Domain.Entities;
 using Movura.Api.Models.Dto;
 
 namespace Movura.Api.Services.Mappings;

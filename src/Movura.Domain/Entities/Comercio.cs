@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace Movura.Api.Data.Entities;
+namespace Movura.Domain.Entities;
 
 public class Comercio
 {
@@ -12,8 +12,6 @@ public class Comercio
     [Required]
     public string ParkingId { get; set; }
     public Parking? Parking { get; set; }
-
-    public ICollection<User> Usuarios { get; set; } = new List<User>();
 
     public int StatusId { get; set; }
     public Status? Status { get; set; }

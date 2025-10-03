@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Movura.Api.Data.Entities;
+using Movura.Domain.Entities;
 
 namespace Movura.Api.Data.Context;
 

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Movura.Api.Data.Entities;
+namespace Movura.Domain.Entities;
 
 [Table("Notificaciones")]
 public class Notificacion

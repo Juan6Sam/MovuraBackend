@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Movura.Api.Data.Entities;
+namespace Movura.Domain.Entities;
 
 public class RefreshToken
 {

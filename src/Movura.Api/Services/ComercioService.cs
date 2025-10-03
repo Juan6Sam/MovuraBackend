@@ -1,13 +1,15 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Movura.Api.Data.Context;
-using Movura.Api.Data.Entities;
+using Movura.Domain.Entities;
 using Movura.Api.Models.Dto;
 using Movura.Api.Services.Interfaces;
 
 namespace Movura.Api.Services;
 
-// Fichero re-escrito para sanear y corregir errores de compilacion invisibles.
+// El servicio ha sido re-escrito para alinearse con la estructura real de la base de datos.
+// Se ha eliminado toda la lógica que hacía referencia a la colección 'Comercio.Usuarios',
+// ya que no existe una relación directa entre Comercios y Usuarios en la base de datos.
 public class ComercioService : IComercioService
 {
     private readonly MovuraDbContext _context;
@@ -30,8 +32,7 @@ public class ComercioService : IComercioService
     public async Task<List<ComercioDto>> GetByParkingIdAsync(string parkingId)
     {
         var comercios = await _context.Set<Comercio>()
-            .Where(c => c.ParkingId == parkingId) // Comparacion string == string, ahora correcta.
-            .Include(c => c.Usuarios)
+            .Where(c => c.ParkingId == parkingId)
             .ToListAsync();
 
         return _mapper.Map<List<ComercioDto>>(comercios);
@@ -44,7 +45,7 @@ public class ComercioService : IComercioService
         var comercio = _mapper.Map<Comercio>(comercioDto);
         comercio.ParkingId = parkingId;
 
-        await ValidateComercioAsync(comercio);
+        ValidateComercio(comercio);
 
         _context.Set<Comercio>().Add(comercio);
         await _context.SaveChangesAsync();
@@ -57,28 +58,13 @@ public class ComercioService : IComercioService
     public async Task<ComercioDto> UpdateAsync(string parkingId, int comercioId, ComercioDto comercioDto)
     {
         var comercio = await _context.Set<Comercio>()
-            .Include(c => c.Usuarios)
-            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId) // int == int && string == string
+            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId)
             ?? throw new InvalidOperationException($"No se encontró el comercio con ID {comercioId}");
 
-        var oldUsuarios = new List<User>(comercio.Usuarios);
-
         _mapper.Map(comercioDto, comercio);
-        await ValidateComercioAsync(comercio);
+        ValidateComercio(comercio);
 
         await _context.SaveChangesAsync();
-
-        var removedUsuarios = oldUsuarios.Except(comercio.Usuarios).ToList();
-        if (removedUsuarios.Any())
-        {
-            await NotifyRemovedUsersAsync(comercio.Nombre, removedUsuarios.Select(u => u.Email).ToList());
-        }
-
-        var newUsuarios = comercio.Usuarios.Except(oldUsuarios).ToList();
-        if (newUsuarios.Any())
-        {
-            await NotifyNewUsersAsync(comercio.Nombre, newUsuarios.Select(u => u.Email).ToList());
-        }
 
         return _mapper.Map<ComercioDto>(comercio);
     }
@@ -86,14 +72,14 @@ public class ComercioService : IComercioService
     public async Task DeleteAsync(string parkingId, int comercioId)
     {
         var comercio = await _context.Set<Comercio>()
-            .Include(c => c.Usuarios)
-            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId) // int == int && string == string
+            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId)
             ?? throw new InvalidOperationException($"No se encontró el comercio con ID {comercioId}");
 
         _context.Set<Comercio>().Remove(comercio);
         await _context.SaveChangesAsync();
 
-        await NotifyDeletedComercioAsync(comercio);
+        // Opcional: Notificar al admin sobre la eliminación, ya no se puede notificar a los usuarios.
+        // await NotifyDeletedComercioAsync(comercio);
     }
 
     public async Task<List<ComercioDto>> BulkUpdateAsync(string parkingId, List<ComercioDto> comercios)
@@ -101,7 +87,7 @@ public class ComercioService : IComercioService
         await ValidateParkingAsync(parkingId);
 
         var currentComercios = await _context.Set<Comercio>()
-            .Where(c => c.ParkingId == parkingId) // string == string
+            .Where(c => c.ParkingId == parkingId)
             .ToListAsync();
 
         var comerciosToDelete = currentComercios
@@ -125,7 +111,7 @@ public class ComercioService : IComercioService
                 comercio = currentComercios.First(c => c.Id == comercioDto.Id);
                 _mapper.Map(comercioDto, comercio);
             }
-            await ValidateComercioAsync(comercio);
+            ValidateComercio(comercio);
             updatedComercios.Add(comercio);
         }
 
@@ -136,7 +122,7 @@ public class ComercioService : IComercioService
     public async Task NotifyAccountsAsync(string parkingId, int comercioId, List<string> accounts)
     {
         var comercio = await _context.Set<Comercio>()
-            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId) // int == int && string == string
+            .FirstOrDefaultAsync(c => c.Id == comercioId && c.ParkingId == parkingId)
             ?? throw new InvalidOperationException($"No se encontró el comercio con ID {comercioId}");
 
         foreach (var account in accounts)
@@ -159,7 +145,7 @@ public class ComercioService : IComercioService
         return parking;
     }
 
-    private async Task ValidateComercioAsync(Comercio comercio)
+    private void ValidateComercio(Comercio comercio)
     {
         if (comercio.Tipo != "monto" && comercio.Tipo != "tiempo")
         {
@@ -169,21 +155,6 @@ public class ComercioService : IComercioService
         if (comercio.Valor <= 0)
         {
             throw new InvalidOperationException("El valor debe ser mayor que 0");
-        }
-
-        var userEmails = comercio.Usuarios.Select(u => u.Email).ToList();
-        comercio.Usuarios = comercio.Usuarios.DistinctBy(u => u.Email).ToList();
-
-        var existingEmails = await _context.Set<Comercio>()
-            .Where(c => c.ParkingId == comercio.ParkingId && c.Id != comercio.Id)
-            .SelectMany(c => c.Usuarios.Select(u => u.Email))
-            .ToListAsync();
-
-        var duplicateEmails = userEmails.Intersect(existingEmails).ToList();
-        if (duplicateEmails.Any())
-        {
-            throw new InvalidOperationException(
-                $"Los siguientes emails ya están asignados a otro comercio: {string.Join(", ", duplicateEmails)}");
         }
     }
 
@@ -199,41 +170,5 @@ public class ComercioService : IComercioService
             </ul>";
 
         await _emailService.SendEmailAsync(adminEmail, $"Nuevo Comercio - {comercio.Nombre}", emailBody);
-    }
-
-    private async Task NotifyRemovedUsersAsync(string comercioNombre, List<string> usuarios)
-    {
-        var emailBody = $@"
-            <h2>Removido del Comercio</h2>
-            <p>Has sido removido del comercio {comercioNombre}.</p>";
-
-        foreach (var usuario in usuarios)
-        {
-            await _emailService.SendEmailAsync(usuario, $"Removido del Comercio - {comercioNombre}", emailBody);
-        }
-    }
-
-    private async Task NotifyNewUsersAsync(string comercioNombre, List<string> usuarios)
-    {
-        var emailBody = $@"
-            <h2>Agregado al Comercio</h2>
-            <p>Has sido agregado al comercio {comercioNombre}.</p>";
-
-        foreach (var usuario in usuarios)
-        {
-            await _emailService.SendEmailAsync(usuario, $"Agregado al Comercio - {comercioNombre}", emailBody);
-        }
-    }
-
-    private async Task NotifyDeletedComercioAsync(Comercio comercio)
-    {
-        var emailBody = $@"
-            <h2>Comercio Eliminado</h2>
-            <p>El comercio {comercio.Nombre} ha sido eliminado.</p>";
-
-        foreach (var usuario in comercio.Usuarios)
-        {
-            await _emailService.SendEmailAsync(usuario.Email, $"Comercio Eliminado - {comercio.Nombre}", emailBody);
-        }
     }
 }

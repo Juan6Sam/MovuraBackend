@@ -1,7 +1,7 @@
 using System.Text;
 using ClosedXML.Excel;
 using Movura.Api.Data.Context;
-using Movura.Api.Data.Entities; // Added this to resolve entity properties
+using Movura.Domain.Entities;
 using Movura.Api.Models.Dto;
 using Movura.Api.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +23,7 @@ public class ReportService : IReportService
 
     public async Task<OccupancyReportDto> GetOccupancyReportAsync(string parkingId, DateTime startDate, DateTime endDate)
     {
-        var parking = await _context.Parkings // This should work now
+        var parking = await _context.Parkings
             .Include(p => p.Config)
             .FirstOrDefaultAsync(p => p.Id == parkingId)
             ?? throw new InvalidOperationException($"No se encontró el parking con ID {parkingId}");
@@ -31,9 +31,9 @@ public class ReportService : IReportService
         var totalSpaces = parking.Config?.TotalSpaces ?? 0;
 
         var tickets = await _context.Tickets
-            .Where(t => t.ParkingId == parkingId && // This should work now
-                       t.EntryTime >= startDate && // This should work now
-                       (t.ExitTime == null || t.ExitTime <= endDate)) // This should work now
+            .Where(t => t.ParkingId == parkingId &&
+                       t.EntryTime >= startDate &&
+                       (t.ExitTime == null || t.ExitTime <= endDate))
             .ToListAsync();
 
         var hourlyOccupancy = new List<OccupancyDataPoint>();
@@ -72,7 +72,7 @@ public class ReportService : IReportService
 
     public async Task<List<TransactionReportDto>> GetTransactionReportAsync(string parkingId, DateTime startDate, DateTime endDate)
     {
-        return await _context.Transacciones // Corrected from Transactions
+        return await _context.Transacciones
             .Where(t => t.ParkingId == parkingId &&
                        t.CreatedAt >= startDate &&
                        t.CreatedAt <= endDate)
@@ -85,7 +85,7 @@ public class ReportService : IReportService
                 Amount = t.Amount,
                 PaymentMethod = t.PaymentMethod,
                 ComercioId = t.ComercioId.ToString(),
-                ComercioName = t.Comercio != null ? t.Comercio.Nombre : null,
+                ComercioName = t.Comercio != null ? t.Comercio.Nombre : string.Empty,
                 ComercioDiscount = t.DiscountAmount
             })
             .ToListAsync();
@@ -93,7 +93,7 @@ public class ReportService : IReportService
 
     public async Task<Dictionary<int, ComercioReportDto>> GetComercioReportAsync(string parkingId, DateTime startDate, DateTime endDate)
     {
-        var transactions = await _context.Transacciones // Corrected from Transactions
+        var transactions = await _context.Transacciones
             .Where(t => t.ParkingId == parkingId &&
                        t.CreatedAt >= startDate &&
                        t.CreatedAt <= endDate &&
@@ -124,7 +124,7 @@ public class ReportService : IReportService
                 TicketId = transaction.TicketId.ToString(),
                 TransactionTime = transaction.CreatedAt,
                 DiscountAmount = transaction.DiscountAmount,
-                DiscountType = transaction.Comercio!.Tipo
+                DiscountType = transaction.Comercio!.Tipo ?? string.Empty
             });
         }
 
@@ -220,7 +220,7 @@ public class ReportService : IReportService
 
     private static byte[] GenerateCsvTransactionReport(List<TransactionReportDto> transactions)
     {
-        var csv = new StringBuilder(); // This should work now
+        var csv = new StringBuilder();
         csv.AppendLine("TicketId,Entrada,Salida,Monto,Método de Pago,Comercio,Descuento");
 
         foreach (var transaction in transactions)
@@ -234,12 +234,12 @@ public class ReportService : IReportService
                           $"{transaction.ComercioDiscount}");
         }
 
-        return Encoding.UTF8.GetBytes(csv.ToString()); // This should work now
+        return Encoding.UTF8.GetBytes(csv.ToString());
     }
 
     private static byte[] GenerateCsvOccupancyReport(OccupancyReportDto report)
     {
-        var csv = new StringBuilder(); // This should work now
+        var csv = new StringBuilder();
         
         csv.AppendLine($"Espacios Totales,{report.TotalSpaces}");
         csv.AppendLine($"Ocupación Promedio (%),{report.AverageOccupancyRate}");
@@ -255,6 +255,6 @@ public class ReportService : IReportService
                           $"{dataPoint.OccupancyRate}");
         }
 
-        return Encoding.UTF8.GetBytes(csv.ToString()); // This should work now
+        return Encoding.UTF8.GetBytes(csv.ToString());
     }
 }

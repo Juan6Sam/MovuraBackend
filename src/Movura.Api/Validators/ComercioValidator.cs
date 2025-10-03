@@ -19,19 +19,6 @@ public class ComercioValidator : AbstractValidator<ComercioDto>
 
         RuleFor(x => x.Valor)
             .GreaterThan(0).WithMessage("El valor debe ser mayor que 0");
-
-        RuleForEach(x => x.Usuarios).ChildRules(user => {
-            user.RuleFor(u => u.Email)
-                .NotEmpty()
-                .EmailAddress().WithMessage("Uno o más emails no son válidos.")
-                .MaximumLength(100).WithMessage("El email no puede exceder los 100 caracteres.");
-            user.RuleFor(u => u.Username)
-                .NotEmpty().WithMessage("El nombre de usuario es requerido.");
-        });
-
-        RuleFor(x => x.Usuarios)
-            .Must(usuarios => usuarios == null || usuarios.Select(u => u.Email).Distinct(System.StringComparer.OrdinalIgnoreCase).Count() == usuarios.Count)
-            .WithMessage("No se permiten emails duplicados");
     }
 }
 

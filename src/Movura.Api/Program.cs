@@ -39,7 +39,7 @@ try
     builder.Services.AddAutoMapper(typeof(Program));
 
     // --- Registro de Servicios Personalizados ---
-    builder.Services.AddScoped<AuthService>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<JwtHelper>();
     builder.Services.AddScoped<ReportService>();
     builder.Services.AddScoped<IEmailService, EmailService>();

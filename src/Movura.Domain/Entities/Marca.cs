@@ -1,23 +1,23 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Movura.Api.Data.Entities;
+namespace Movura.Domain.Entities;
 
-[Table("Roles")]
-public class Role
+[Table("Marcas")]
+public class Marca
 {
     [Key]
-    [Column("id_rol")]
+    [Column("id_marca")]
     public int Id { get; set; }
 
     [Required]
     [Column("nombre")]
-    [StringLength(100)]
+    [StringLength(50)]
     public string Nombre { get; set; } = string.Empty;
 
     [Column("descripcion")]
-    [StringLength(250)]
+    [StringLength(200)]
     public string? Descripcion { get; set; }
 
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public virtual ICollection<Tarjeta> Tarjetas { get; set; } = new List<Tarjeta>();
 }

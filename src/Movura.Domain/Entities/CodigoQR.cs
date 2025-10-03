@@ -1,47 +1,45 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Movura.Api.Data.Entities;
+namespace Movura.Domain.Entities;
 
-[Table("Pagos")]
-public class Pago
+[Table("CodigosQR")]
+public class CodigoQR
 {
     [Key]
-    [Column("id_pago")]
+    [Column("id_qr")]
     public int Id { get; set; }
 
     [Required]
-    [Column("id_ticket")]
-    public int TicketId { get; set; }
+    [Column("codigo")]
+    public Guid Codigo { get; set; }
 
     [Column("id_usuario")]
     public int? UserId { get; set; }
+
+    [Column("id_comercio")]
+    public int? ComercioId { get; set; }
 
     [Column("id_acceso")]
     public int? AccesoId { get; set; }
 
     [Required]
-    [Column("monto", TypeName = "decimal(18,2)")]
-    public decimal Monto { get; set; }
+    [Column("fecha_creacion")]
+    public DateTime FechaCreacion { get; set; }
 
     [Required]
-    [Column("metodo_pago")]
-    [StringLength(50)]
-    public string MetodoPago { get; set; } = string.Empty;
-
-    [Required]
-    [Column("fecha_pago")]
-    public DateTime FechaPago { get; set; }
+    [Column("fecha_expiracion")]
+    public DateTime FechaExpiracion { get; set; }
 
     [Required]
     [Column("id_estatus")]
     public int StatusId { get; set; }
 
-    [ForeignKey(nameof(TicketId))]
-    public virtual Ticket? Ticket { get; set; }
-
     [ForeignKey(nameof(UserId))]
     public virtual User? User { get; set; }
+
+    [ForeignKey(nameof(ComercioId))]
+    public virtual Comercio? Comercio { get; set; }
 
     [ForeignKey(nameof(AccesoId))]
     public virtual Acceso? Acceso { get; set; }

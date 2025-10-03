@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Movura.Api.Data.Context;
+using Movura.Domain.Entities;
 using Movura.Api.Models.Dto;
 using Movura.Api.Services.Interfaces;
 
@@ -23,7 +24,7 @@ public class ParkingService : IParkingService
     {
         try
         {
-            var query = _context.Set<Movura.Api.Data.Entities.Parking>()
+            var query = _context.Set<Parking>()
                 .Include(p => p.Config)
                 .Include(p => p.Comercios)
                 .AsQueryable();
@@ -47,7 +48,7 @@ public class ParkingService : IParkingService
     {
         try
         {
-            var parking = await _context.Set<Movura.Api.Data.Entities.Parking>()
+            var parking = await _context.Set<Parking>()
                 .Include(p => p.Config)
                 .Include(p => p.Comercios)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -65,7 +66,7 @@ public class ParkingService : IParkingService
     {
         try
         {
-            var parking = await _context.Set<Movura.Api.Data.Entities.Parking>()
+            var parking = await _context.Set<Parking>()
                 .Include(p => p.Config)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -76,7 +77,7 @@ public class ParkingService : IParkingService
 
             if (parking.Config == null)
             {
-                parking.Config = new Movura.Api.Data.Entities.ParkingConfig
+                parking.Config = new ParkingConfig
                 {
                     ParkingId = parking.Id
                 };
@@ -96,7 +97,7 @@ public class ParkingService : IParkingService
         }
     }
 
-    private void ValidateParkingConfig(Movura.Api.Data.Entities.ParkingConfig config)
+    private void ValidateParkingConfig(ParkingConfig config)
     {
         if (config.TarifaBase < 0)
             throw new InvalidOperationException("La tarifa base no puede ser negativa");

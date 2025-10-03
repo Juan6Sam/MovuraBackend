@@ -23,6 +23,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.5.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Movura.Domain\Movura.Domain.csproj" />
+  </ItemGroup>
+
   <!-- Todos los controladores y servicios habilitados -->
 
 </Project>

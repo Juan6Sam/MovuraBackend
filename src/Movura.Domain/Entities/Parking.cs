@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
 
-namespace Movura.Api.Data.Entities;
+namespace Movura.Domain.Entities;
 
 public class Parking
 {

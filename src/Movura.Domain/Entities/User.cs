@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 
-namespace Movura.Api.Data.Entities;
+namespace Movura.Domain.Entities;
 
 [Table("Usuarios")]
 public class User

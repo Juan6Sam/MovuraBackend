@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Movura.Api.Constants;
-using Movura.Api.Data.Entities;
+using Movura.Domain.Entities;
 
 namespace Movura.Api.Services.Auth;
 

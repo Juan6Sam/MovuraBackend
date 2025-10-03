@@ -6,7 +6,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Movura.Api.Constants;
 using Movura.Api.Data.Context;
-using Movura.Api.Data.Entities;
+using Movura.Domain.Entities;
 using Movura.Api.Models.Dto;
 using Movura.Api.Services.Interfaces;
 
@@ -36,14 +36,27 @@ public class AuthService : IAuthService
 
     public async Task<AuthLoginResponse> LoginAsync(AuthLoginRequest request)
     {
-        // 1) Obtener salt activo del usuario
-        // Validar con EF usando Contrasenas (salt + SHA-512)
+        // La consulta ha sido modificada para usar una proyección explícita (new User { ... }).
+        // Esto fuerza a Entity Framework a generar el SQL correcto, seleccionando solo las columnas especificadas,
+        // y evita que intente buscar la columna fantasma 'ComercioId' debido a un problema de caché o metadatos corruptos.
         var userWithSecret = await _context.Users
-            .Include(u => u.Role)
+            .Include(u => u.Role) // El Include es necesario para que u.Role no sea null en la proyección.
             .Where(u => u.Email == request.Email)
             .Select(u => new
             {
-                User = u,
+                User = new User
+                {
+                    Id = u.Id,
+                    Nombre = u.Nombre,
+                    Apellido = u.Apellido,
+                    Email = u.Email,
+                    Telefono = u.Telefono,
+                    RoleId = u.RoleId,
+                    StatusId = u.StatusId,
+                    FirstLogin = u.FirstLogin,
+                    FechaRegistro = u.FechaRegistro,
+                    Role = u.Role, // Asignamos la entidad Role ya cargada.
+                },
                 Secret = _context.Contrasenas
                     .Where(c => c.UserId == u.Id && c.Activa)
                     .OrderByDescending(c => c.FechaCreacion)
@@ -58,10 +71,9 @@ public class AuthService : IAuthService
         }
 
         var computedHash = HashPassword(request.Password + userWithSecret.Secret.Salt);
-        // Logs de depuración removidos
+
         if (!string.Equals(computedHash, userWithSecret.Secret.Hash, StringComparison.OrdinalIgnoreCase))
         {
-            // Registrar intento fallido si corresponde
             var failedUser = userWithSecret.User;
             await _context.Database.ExecuteSqlRawAsync(
                 "EXEC sp_RegistrarIntentoAcceso @IdUsuario, @IpAddress, @Exitoso, @Descripcion",
@@ -76,29 +88,16 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
-            // Registrar el intento fallido
-            var failedUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-            if (failedUser != null)
-            {
-                await _context.Database.ExecuteSqlRawAsync(
-                    "EXEC sp_RegistrarIntentoAcceso @IdUsuario, @IpAddress, @Exitoso, @Descripcion",
-                    new SqlParameter("@IdUsuario", failedUser.Id),
-                    new SqlParameter("@IpAddress", ""), // TODO: Get client IP from context
-                    new SqlParameter("@Exitoso", false),
-                    new SqlParameter("@Descripcion", "Credenciales inválidas"));
-            }
             throw new UnauthorizedAccessException("Credenciales inválidas");
         }
 
-        // Registrar el intento exitoso
         await _context.Database.ExecuteSqlRawAsync(
             "EXEC sp_RegistrarIntentoAcceso @IdUsuario, @IpAddress, @Exitoso, @Descripcion",
             new SqlParameter("@IdUsuario", user.Id),
-            new SqlParameter("@IpAddress", ""), // TODO: Get client IP from context
+            new SqlParameter("@IpAddress", ""), // TODO: Get client IP
             new SqlParameter("@Exitoso", true),
             new SqlParameter("@Descripcion", "Login exitoso"));
 
-        // Generar token JWT basado en entidad User
         var token = _jwtHelper.GenerateJwtToken(user);
         var userDto = _mapper.Map<UserDto>(user);
 
@@ -167,14 +166,8 @@ public class AuthService : IAuthService
     private static string HashPassword(string password)
     {
         using var sha512 = SHA512.Create();
-        // Importante: usar UTF-16 LE (Encoding.Unicode) para alinearnos con HASHBYTES(NVARCHAR)
         var hashedBytes = sha512.ComputeHash(Encoding.Unicode.GetBytes(password));
         return BitConverter.ToString(hashedBytes).Replace("-", string.Empty);
-    }
-
-    private static bool VerifyPassword(string password, string hash)
-    {
-        return HashPassword(password) == hash;
     }
 
     private static string GenerateTemporaryPassword()
