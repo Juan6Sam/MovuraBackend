@@ -9,9 +9,6 @@ obj/
 .idea/
 
 # Ignorar archivos de configuración local
-appsettings.Development.json
-appsettings.Production.json
-appsettings.Docker.json
 appsettings.json
 
 # Ignorar archivos de dependencias
@@ -42,3 +39,4 @@ docker-compose.override.yml
 
 # Mantener los scripts SQL
 !src/Movura.Api/Data/Scripts/
+.fake
