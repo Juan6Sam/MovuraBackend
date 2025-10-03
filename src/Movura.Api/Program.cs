@@ -1,3 +1,4 @@
+
 using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,6 +12,8 @@ using Movura.Api.Services.Auth;
 using Movura.Api.Services.Interfaces;
 using Serilog;
 using FluentValidation.AspNetCore;
+using System.IO;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,7 +54,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Configurar Base de Datos
+// Configurar Base de Datos con SQL Server
 builder.Services.AddDbContext<MovuraDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -93,7 +96,6 @@ builder.Services.AddAuthorization(AuthorizationPolicies.ConfigurePolicies);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // Configurar servicios de la aplicación
-builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SMTP"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -108,11 +110,53 @@ builder.Services.AddFluentValidationAutoValidation()
 
 var app = builder.Build();
 
+// =======================================================================================
+// INICIO: MÓDULO DE VERIFICACIÓN DE CONEXIÓN A LA BASE DE DATOS
+// Este bloque verifica la conexión a la base de datos al iniciar la aplicación.
+// No es necesario comentarlo en producción, ya que es una verificación ligera.
+// =======================================================================================
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<MovuraDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        logger.LogInformation("Verificando conexión con la base de datos...");
+        var canConnect = await dbContext.Database.CanConnectAsync();
+        if (canConnect)
+        {
+            logger.LogInformation("✅ Conexión con la base de datos establecida correctamente.");
+        }
+        else
+        {
+            logger.LogCritical("❌ Error Crítico: No se pudo establecer conexión con la base de datos.");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogCritical(ex, "❌ Error Crítico: Excepción al intentar conectar con la base de datos.");
+    }
+}
+// =======================================================================================
+// FIN: MÓDULO DE VERIFICACIÓN DE CONEXIÓN A LA BASE DE DATOS
+// =======================================================================================
+
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    // =======================================================================================
+    // INICIO: MIDDLEWARE DE LOGGING DE PETICIONES (SOLO DESARROLLO)
+    // Este middleware registra el cuerpo de las peticiones y respuestas.
+    // Para producción, simplemente comenta o elimina la siguiente línea.
+    // =======================================================================================
+    app.UseMiddleware<RequestLoggingMiddleware>();
+    // =======================================================================================
+    // FIN: MIDDLEWARE DE LOGGING DE PETICIONES
+    // =======================================================================================
 }
 
 // Configurar middleware de excepciones personalizado
@@ -125,4 +169,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
