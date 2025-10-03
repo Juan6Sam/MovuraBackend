@@ -44,8 +44,12 @@ public class ComerciosController : ControllerBase
     [Authorize(Roles = $"{UserRoles.Admin},{UserRoles.ParkingAdmin}")]
     public async Task<ActionResult<ComercioDto>> Update(string parkingId, string comercioId, ComercioDto comercioDto)
     {
-        _logger.LogInformation("Actualizando comercio {ComercioId} del parking {ParkingId}", comercioId, parkingId);
-        var comercio = await _comercioService.UpdateAsync(parkingId, comercioId, comercioDto);
+        if (!int.TryParse(comercioId, out var id))
+        {
+            return BadRequest("El ID del comercio debe ser un número entero.");
+        }
+        _logger.LogInformation("Actualizando comercio {ComercioId} del parking {ParkingId}", id, parkingId);
+        var comercio = await _comercioService.UpdateAsync(parkingId, id, comercioDto);
         return Ok(comercio);
     }
 
@@ -53,8 +57,12 @@ public class ComerciosController : ControllerBase
     [Authorize(Roles = $"{UserRoles.Admin},{UserRoles.ParkingAdmin}")]
     public async Task<ActionResult> Delete(string parkingId, string comercioId)
     {
-        _logger.LogInformation("Eliminando comercio {ComercioId} del parking {ParkingId}", comercioId, parkingId);
-        await _comercioService.DeleteAsync(parkingId, comercioId);
+        if (!int.TryParse(comercioId, out var id))
+        {
+            return BadRequest("El ID del comercio debe ser un número entero.");
+        }
+        _logger.LogInformation("Eliminando comercio {ComercioId} del parking {ParkingId}", id, parkingId);
+        await _comercioService.DeleteAsync(parkingId, id);
         return NoContent();
     }
 
@@ -71,8 +79,12 @@ public class ComerciosController : ControllerBase
     [Authorize(Roles = $"{UserRoles.Admin},{UserRoles.ParkingAdmin}")]
     public async Task<ActionResult> NotifyAccounts(string parkingId, string comercioId, [FromBody] List<string> accounts)
     {
-        _logger.LogInformation("Enviando notificaciones a usuarios del comercio {ComercioId}", comercioId);
-        await _comercioService.NotifyAccountsAsync(parkingId, comercioId, accounts);
+        if (!int.TryParse(comercioId, out var id))
+        {
+            return BadRequest("El ID del comercio debe ser un número entero.");
+        }
+        _logger.LogInformation("Enviando notificaciones a usuarios del comercio {ComercioId}", id);
+        await _comercioService.NotifyAccountsAsync(parkingId, id, accounts);
         return Ok();
     }
 }

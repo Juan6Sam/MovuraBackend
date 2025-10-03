@@ -8,5 +8,5 @@ public interface IReportService
     Task<List<TransactionReportDto>> GetTransactionReportAsync(string parkingId, DateTime startDate, DateTime endDate);
     Task<byte[]> ExportTransactionReportAsync(string parkingId, DateTime startDate, DateTime endDate, string format);
     Task<byte[]> ExportOccupancyReportAsync(string parkingId, DateTime startDate, DateTime endDate, string format);
-    Task<Dictionary<string, ComercioReportDto>> GetComercioReportAsync(string parkingId, DateTime startDate, DateTime endDate);
+    Task<Dictionary<int, ComercioReportDto>> GetComercioReportAsync(string parkingId, DateTime startDate, DateTime endDate);
 }

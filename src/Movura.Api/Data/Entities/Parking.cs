@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace Movura.Api.Data.Entities;
 
@@ -30,31 +31,8 @@ public class Parking
     public ParkingConfig Config { get; set; } = null!;
     
     public ICollection<Comercio> Comercios { get; set; } = new List<Comercio>();
-}
 
-public class ParkingConfig
-{
-    [Key]
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    
-    [Required]
-    public decimal TarifaBase { get; set; }
-    
-    [Required]
-    public decimal CostoHora { get; set; }
-    
-    [Required]
-    public int FraccionMin { get; set; }
-    
-    [Required]
-    public decimal CostoFraccion { get; set; }
-    
-    [Required]
-    public int GraciaMin { get; set; }
-    
-    [Required]
-    public string HoraCorte { get; set; } = "00:00";
-    
-    public string ParkingId { get; set; } = null!;
-    public Parking Parking { get; set; } = null!;
+    // Colecciones que faltaban, ahora agregadas para resolver errores de DbContext.
+    public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+    public ICollection<Transaccion> Transacciones { get; set; } = new List<Transaccion>();
 }

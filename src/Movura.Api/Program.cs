@@ -1,128 +1,128 @@
-using System.Text;
-using FluentValidation;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Serilog;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using Movura.Api.Data.Context;
+using System.Text;
 using Movura.Api.Middleware;
+using Movura.Api.Data.Context;
 using Movura.Api.Services;
 using Movura.Api.Services.Auth;
 using Movura.Api.Services.Interfaces;
-using Serilog;
-using FluentValidation.AspNetCore;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Configurar Serilog
+// Configuración inicial de Serilog
 Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
     .WriteTo.Console()
-    .CreateLogger();
+    .CreateBootstrapLogger();
 
-builder.Host.UseSerilog();
+Log.Information("Iniciando la aplicación Movura API...");
 
-// Add services to the container
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-
-// Configurar Swagger/OpenAPI
-builder.Services.AddSwaggerGen(c =>
+try
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Movura Admin API", Version = "v1" });
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Usar Serilog para el logging
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+
+    // 1. CONFIGURACIÓN DE SERVICIOS
+
+    builder.Services.AddControllers();
+
+    // DbContext
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    builder.Services.AddDbContext<MovuraDbContext>(options =>
+        options.UseSqlServer(connectionString));
+
+    // AutoMapper
+    builder.Services.AddAutoMapper(typeof(Program));
+
+    // --- Registro de Servicios Personalizados ---
+    builder.Services.AddScoped<AuthService>();
+    builder.Services.AddScoped<JwtHelper>();
+    builder.Services.AddScoped<ReportService>();
+    builder.Services.AddScoped<IEmailService, EmailService>();
+
+    // Autenticación JWT
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            new OpenApiSecurityScheme
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
-            Array.Empty<string>()
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
+                ValidAudience = builder.Configuration["JWT:ValidAudience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]!))
+            };
+        });
+
+    // Swagger
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+
+    // CORS
+    var corsOrigins = builder.Configuration.GetSection("CORS:Origins").Get<string[]>() ?? new string[] { };
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowSpecificOrigins",
+            policy =>
+            {
+                policy.WithOrigins(corsOrigins)
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            });
+    });
+
+    // 2. CONSTRUCCIÓN Y CONFIGURACIÓN DEL PIPELINE
+
+    var app = builder.Build();
+
+    // Verificación de la conexión a la base de datos
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<MovuraDbContext>();
+        Log.Information("Verificando conexión con la base de datos...");
+        try
+        {
+            if (await dbContext.Database.CanConnectAsync())
+            {
+                Log.Information("✅ Conexión con la base de datos establecida correctamente.");
+            }
         }
-    });
-});
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "❌ No se pudo establecer conexión con la base de datos.");
+        }
+    }
 
-// Configurar Base de Datos
-builder.Services.AddDbContext<MovuraDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Configurar CORS
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
+    // Pipeline de peticiones HTTP
+    if (app.Environment.IsDevelopment())
     {
-        policy.WithOrigins(builder.Configuration.GetSection("CORS:Origins").Get<string[]>() ?? Array.Empty<string>())
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
-});
+        app.UseSwagger();
+        app.UseSwaggerUI();
+        app.UseMiddleware<RequestLoggingMiddleware>();
+    }
 
-// Configurar Autenticación JWT y Autorización
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
-        ValidAudience = builder.Configuration["JWT:ValidAudience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"] ?? throw new InvalidOperationException())),
-        ClockSkew = TimeSpan.Zero
-    };
-});
+    app.UseHttpsRedirection();
+    app.UseCors("AllowSpecificOrigins");
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.MapControllers();
 
-builder.Services.AddAuthorization(AuthorizationPolicies.ConfigurePolicies);
-
-// Configurar AutoMapper
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
-// Configurar servicios de la aplicación
-builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SMTP"));
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<JwtHelper>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IParkingService, ParkingService>();
-builder.Services.AddScoped<IComercioService, ComercioService>();
-builder.Services.AddScoped<IReportService, ReportService>();
-
-// Agregar servicio de validación
-builder.Services.AddFluentValidationAutoValidation()
-    .AddFluentValidationClientsideAdapters()
-    .AddValidatorsFromAssemblyContaining<Program>();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    // 3. EJECUCIÓN
+    app.Run();
 }
-
-// Configurar middleware de excepciones personalizado
-app.UseMiddleware<ExceptionMiddleware>();
-
-app.UseHttpsRedirection();
-app.UseCors();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-
-app.Run();
-
+catch (Exception ex)
+{
+    // Asegurarse de que el logger capture la excepción completa
+    Log.Fatal(ex, "La aplicación ha fallado al iniciar. Exception: {ExceptionObject}", ex);
+}
+finally
+{
+    Log.Information("Cerrando la aplicación.");
+    Log.CloseAndFlush();
+}
